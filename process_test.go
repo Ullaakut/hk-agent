@@ -9,7 +9,7 @@ import (
 
 func TestNewLogProessor(t *testing.T) {
 	log := NewZeroLog(bytes.NewBuffer([]byte{}), JSON)
-	lp := NewLogProcessor(log, 3, 1024, time.Second)
+	lp := NewLogProcessor(log, 3, 1024, time.Second, time.Now)
 
 	if lp.topHitsNumber != 3 {
 		t.Error("NewLogProcessor doesn't set top hits number properly")
@@ -89,6 +89,7 @@ func TestAddEntries(t *testing.T) {
 		trafficThreshold: 1024,
 		hits:             make(map[string]int),
 		refreshPeriod:    10 * time.Second,
+		now:              time.Now,
 	}
 
 	entries := []*HTTPEntry{
@@ -114,11 +115,12 @@ func TestAddEntries(t *testing.T) {
 	}
 }
 
-// This test is very ugly and takes 20ms to run because the LogProcessor calls time.Now() directly
-// A fix would be to inject a function to the LogProcessor, to inject time.Now() from the main and a mocking
-// function in this test. This would avoid random fails due to a slow machine running the test as well as
-// make the test way faster.
+// This test ensures that when the traffic reaches the threshold a message is outputed, and that when it is still the
+// case messages are outputed at every iteration of the refresh period. It also makes sure that when the traffic goes
+// back below the threshold in the last 2 minutes, the alert stops and a message is outputed to indicate that as well
 func TestAlerting(t *testing.T) {
+	// December 11, 1241 - look it up
+	baseTime := time.Date(1241, time.December, 11, 8, 42, 24, 0, time.UTC)
 	// TODO: Inject time methods into LogProcessor to avoid erroneous and slow test cases like this one
 	entry1 := &HTTPEntry{
 		ClientAddress: "::1",
@@ -131,7 +133,7 @@ func TestAlerting(t *testing.T) {
 		Section:       "/bestsection",
 		Status:        201,
 		Size:          999999999, // 953 MB
-		Time:          time.Now().Add(-119985 * time.Millisecond),
+		Time:          baseTime,
 	}
 
 	b := []byte{}
@@ -144,6 +146,13 @@ func TestAlerting(t *testing.T) {
 		trafficThreshold: 1,
 		refreshPeriod:    10 * time.Millisecond,
 		hits:             make(map[string]int),
+		now: func() time.Time {
+			// first call: entry is 0s old - alert
+			// second call: entry is 1mn30 old - still alert
+			// third call: entry is 3mn old - outdated
+			baseTime = baseTime.Add(90 * time.Second)
+			return baseTime
+		},
 	}
 
 	entries := []*HTTPEntry{
@@ -151,9 +160,7 @@ func TestAlerting(t *testing.T) {
 	}
 
 	lp.Add(entries)
-	time.Sleep(10 * time.Millisecond)
 	lp.Add(nil)
-	time.Sleep(10 * time.Millisecond)
 	lp.Add(nil)
 
 	if !strings.Contains(buffer.String(), `{"level":"warn","recent_traffic":"953MB","threshold":"1MB","message":"Total traffic over the last 2 minutes exceeds the configured threshold"}`) {
