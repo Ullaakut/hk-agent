@@ -14,8 +14,8 @@
 [[projects]]
   name = "github.com/ullaakut/gonx"
   packages = ["."]
-  revision = "f1c51f19b2b87faac9db82567fa41165c31edc7d"
-  version = "v1.3.0"
+  revision = "2a7cebe9f647efc7bbc5e8ee4ece417c7a87bbaf"
+  version = "1.4.0"
 
 [solve-meta]
   analyzer-name = "dep"
