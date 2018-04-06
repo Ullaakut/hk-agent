@@ -46,6 +46,7 @@ func readLogs(log *zerolog.Logger, config Config) {
 		config.TopHitsNumber,
 		config.TrafficThreshold,
 		config.RefreshPeriod,
+		time.Now,
 	)
 
 	// open log file

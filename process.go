@@ -16,7 +16,11 @@ type hit struct {
 // LogProcessor is a  structure that contains all previous HTTP logs and processes
 // them to detect high traffic and rank top hits for example
 type LogProcessor struct {
+	// logger
 	log *zerolog.Logger
+
+	// time.Now() function
+	now func() time.Time
 
 	// Configuration
 	trafficThreshold uint64
@@ -41,6 +45,7 @@ func NewLogProcessor(
 	topHitsNumber int,
 	trafficThreshold uint64,
 	refreshPeriod time.Duration,
+	now func() time.Time,
 ) *LogProcessor {
 	return &LogProcessor{
 		log:              log,
@@ -48,6 +53,7 @@ func NewLogProcessor(
 		trafficThreshold: trafficThreshold,
 		refreshPeriod:    refreshPeriod,
 		hits:             make(map[string]int),
+		now:              now,
 	}
 }
 
@@ -121,7 +127,7 @@ func (lp *LogProcessor) checkRecentTraffic(entries []*HTTPEntry) {
 	}
 
 	// A recent entry is younger than 2mn minus the refresh period
-	recentLimit := time.Now().Add(-120*time.Second + lp.refreshPeriod)
+	recentLimit := lp.now().Add(-120*time.Second + lp.refreshPeriod)
 
 	// Process new entries (last refresh)
 	// and store new entries that are within last 1mn50 into recent entries
