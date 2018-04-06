@@ -5,10 +5,10 @@ A simple console program that monitors HTTP traffic on a machine.
 ## Features
 
 - [x] Consumes an actively written-to w3c-formatted HTTP access log (Common Log Format)
-- [ ] Every 10s, displays in the console the sections of the web site with the most hits as well as interesting summary statistics on the traffic as a whole.
-- [ ] Whenever the total traffic for the past 2 minutes exceeds a certain number on average, displays an alert
-- [ ] Whenever the total traffic drops again below that value on average for the past 2 minutes, displays a message saying that it recovered
-- [ ] All messages showing when alerting thresholds are crossed remain visible on the page for historical reasons
+- [x] Every 10s, displays in the console the sections of the web site with the most hits as well as interesting summary statistics on the traffic as a whole.
+- [x] Whenever the total traffic for the past 2 minutes exceeds a certain number on average, displays an alert
+- [x] Whenever the total traffic drops again below that value on average for the past 2 minutes, displays a message saying that it recovered
+- [x] All messages showing when alerting thresholds are crossed remain visible on the page for historical reasons
 
 ## Testing
 
