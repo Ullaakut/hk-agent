@@ -98,11 +98,6 @@ func parseSection(log *zerolog.Logger, request string) (string, error) {
 		return "", errors.New("invalid request format")
 	}
 
-	// Remove / from section name
-	if request[sectionPos+endOfSectionPos] == '/' {
-		endOfSectionPos++
-	}
-
 	// if there is no subsection, return the whole route
 	if endOfSectionPos < subsectionPos {
 		return request[sectionPos : endOfSectionPos+sectionPos], nil
