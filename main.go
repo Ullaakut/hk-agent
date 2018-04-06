@@ -13,7 +13,7 @@ import (
 
 func main() {
 	// instantiate structured logger
-	log := NewZeroLog(os.Stderr)
+	log := NewZeroLog(os.Stderr, Pretty)
 
 	config := DefaultConfig()
 	config.Print(log)
@@ -41,7 +41,12 @@ func readLogs(log *zerolog.Logger, config Config) {
 	parser := gonx.NewParser(`$client_address $identifier $user_id [$time] "$request" $status $size`)
 
 	// instantiate log processor
-	logProcessor := NewLogProcessor(log, config.TopHitsNumber, config.TrafficThreshold)
+	logProcessor := NewLogProcessor(
+		log,
+		config.TopHitsNumber,
+		config.TrafficThreshold,
+		config.RefreshPeriod,
+	)
 
 	// open log file
 	file, err := os.Open(config.LogFilePath)
@@ -71,7 +76,7 @@ func readLogs(log *zerolog.Logger, config Config) {
 		}
 
 		// add all parsed entries to logProcessor
-		go logProcessor.add(entries)
+		go logProcessor.Add(entries)
 
 		// Sleep for 10 seconds minus the time that this loop took to complete
 		// If this loop took more than 10s to complete, sleep will return immediately
