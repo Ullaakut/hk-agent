@@ -7,9 +7,26 @@ import (
 	"github.com/rs/zerolog"
 )
 
+// LogMode defines the logging mode.
+type LogMode uint8
+
+// LodMode enum to define the different logging modes
+const (
+	Pretty LogMode = iota
+	JSON
+)
+
 // NewZeroLog creates a new zerolog logger
-func NewZeroLog(writer io.Writer) *zerolog.Logger {
-	zl := zerolog.New(writer).Output(zerolog.ConsoleWriter{Out: writer}).With().Timestamp().Logger()
+func NewZeroLog(writer io.Writer, mode LogMode) *zerolog.Logger {
+	var zl zerolog.Logger
+
+	switch mode {
+	case JSON:
+		zl = zerolog.New(writer)
+	case Pretty:
+		zl = zerolog.New(writer).Output(zerolog.ConsoleWriter{Out: writer}).With().Timestamp().Logger()
+	}
+
 	return &zl
 }
 

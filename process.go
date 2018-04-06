@@ -21,6 +21,7 @@ type LogProcessor struct {
 	// Configuration
 	trafficThreshold uint64
 	topHitsNumber    int
+	refreshPeriod    time.Duration
 
 	// entries from the last 1mn50s, used for calculating the recent traffic
 	recent []*HTTPEntry
@@ -35,16 +36,23 @@ type LogProcessor struct {
 }
 
 // NewLogProcessor returns an instance of LogProcessor using the given configuration values
-func NewLogProcessor(log *zerolog.Logger, topHitsNumber int, trafficThreshold uint64) *LogProcessor {
+func NewLogProcessor(
+	log *zerolog.Logger,
+	topHitsNumber int,
+	trafficThreshold uint64,
+	refreshPeriod time.Duration,
+) *LogProcessor {
 	return &LogProcessor{
 		log:              log,
 		topHitsNumber:    topHitsNumber,
 		trafficThreshold: trafficThreshold,
+		refreshPeriod:    refreshPeriod,
 		hits:             make(map[string]int),
 	}
 }
 
-func (lp *LogProcessor) add(entries []*HTTPEntry) {
+// Add adds a new set of entries to the log processor and outputs metrics and alerts on the logger
+func (lp *LogProcessor) Add(entries []*HTTPEntry) {
 	sortedData := make(map[string][]*HTTPEntry)
 
 	// sort hits by section
@@ -106,20 +114,30 @@ func (lp *LogProcessor) checkRecentTraffic(entries []*HTTPEntry) {
 	lp.recentEntries = 0
 	recentTraffic := uint64(0)
 
-	// Process data previously set as recent entries (last 1mn50)
+	// Process data previously set as recent entries
 	for _, entry := range lp.recent {
 		lp.recentEntries++
 		recentTraffic += entry.Size
 	}
 
-	recentLimit := time.Now().Add(-110 * time.Second) // 1mn50s ago
-	// Process new entries (last 10s)
+	// A recent entry is younger than 2mn minus the refresh period
+	recentLimit := time.Now().Add(-120*time.Second + lp.refreshPeriod)
+
+	// Process new entries (last refresh)
 	// and store new entries that are within last 1mn50 into recent entries
 	for _, entry := range entries {
 		if entry.Time.After(recentLimit) {
 			lp.recentEntries++
 			recentTraffic += entry.Size
 			lp.recent = append(lp.recent, entry)
+		}
+	}
+
+	// Remove outdated entries
+	for i, entry := range lp.recent {
+		if entry.Time.Before(recentLimit) {
+			// this entry is no longer recent enough, remove it
+			lp.recent = append(lp.recent[:i], lp.recent[i+1:]...)
 		}
 	}
 
