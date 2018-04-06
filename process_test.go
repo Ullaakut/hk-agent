@@ -121,7 +121,6 @@ func TestAddEntries(t *testing.T) {
 func TestAlerting(t *testing.T) {
 	// December 11, 1241 - look it up
 	baseTime := time.Date(1241, time.December, 11, 8, 42, 24, 0, time.UTC)
-	// TODO: Inject time methods into LogProcessor to avoid erroneous and slow test cases like this one
 	entry1 := &HTTPEntry{
 		ClientAddress: "::1",
 		Request:       "GET /bestsection/top/one HTTP/1.1",
